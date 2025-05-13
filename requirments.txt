@@ -1,0 +1,17 @@
+asgiref==3.8.1
+chardet==5.2.0
+click==8.1.8
+colorama==0.4.6
+Django==5.2
+dlib @ https://github.com/jloh02/dlib/releases/download/v19.22/dlib-19.22.99-cp310-cp310-win_amd64.whl#sha256=f2181b6724669fb0147c9ebc326d72b94de41bced1812eff5df4b133b5d0b575
+face-recognition==1.3.0
+face-recognition-models==0.3.0
+mysqlclient==2.2.7
+numpy==2.2.4
+opencv-python==4.11.0.86
+pillow==11.2.1
+reportlab==4.3.1
+sqlparse==0.5.3
+typing_extensions==4.13.2
+tzdata==2025.2
+python==3.10.0

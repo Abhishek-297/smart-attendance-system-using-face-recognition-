@@ -1,0 +1,382 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Student - Smart Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Smart Attendance System Using Face Recognition</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">Home</a>
+                    </li>
+                    {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/register/' in request.path %}active{% endif %}" href="/register/">Register Student</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/attendance/' in request.path %}active{% endif %}" href="/attendance/">Take Attendance</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/reports/' in request.path %}active{% endif %}" href="/reports/">Attendance Reports</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            {% if user.is_staff %}
+                            <li><a class="dropdown-item" href="/admin/">Admin Panel</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="/logout/">Logout</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login/">Login</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4>Register New Student</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="registrationForm" method="POST" action="{% url 'register_student' %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="first_name" class="form-label">First Name *</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="last_name" class="form-label">Last Name *</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="student_id" class="form-label">Student ID <small class="text-muted">(optional - will be auto-generated if empty)</small></label>
+                                <input type="text" class="form-control" id="student_id" name="student_id">
+                                <div id="student_id_feedback" class="invalid-feedback"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div id="email_feedback" class="invalid-feedback"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="year" class="form-label">Year *</label>
+                                <select class="form-select" id="year" name="year" required>
+                                    <option value="" selected disabled>Select Year</option>
+                                    {% for value, label in years %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Face Image *</label>
+                                <div class="text-center mb-2">
+                                    <div id="camera-container">
+                                        <video id="webcam" width="100%" height="auto" autoplay playsinline></video>
+                                        <canvas id="canvas" style="display: none;"></canvas>
+                                    </div>
+                                    <div id="capturedPhoto" class="mt-2 mb-2" style="display: none;">
+                                        <img id="photo" class="img-thumbnail" style="max-height: 240px;">
+                                    </div>
+                                </div>
+                                <input type="hidden" id="face_image" name="face_image">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button type="button" id="startCamera" class="btn btn-secondary">Start Camera</button>
+                                    <button type="button" id="capturePhoto" class="btn btn-primary" disabled>Capture Photo</button>
+                                    <button type="button" id="retakePhoto" class="btn btn-warning" style="display: none;">Retake</button>
+                                    <button type="button" id="switchCamera" class="btn btn-info">Switch Camera</button>
+                                </div>
+                                <div id="camera-status" class="mt-2"></div>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <button type="submit" id="registerBtn" class="btn btn-primary" disabled>Register Student</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4>Instructions</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h5>How to Register a Student</h5>
+                            <ol>
+                                <li>Fill in all required fields marked with *</li>
+                                <li>Click "Start Camera" to enable the webcam</li>
+                                <li>Position the student's face in the frame and ensure good lighting</li>
+                                <li>Click "Capture Photo" when ready</li>
+                                <li>Review the captured image - retake if necessary</li>
+                                <li>Click "Register Student" to complete registration</li>
+                            </ol>
+                        </div>
+                        <div class="alert alert-warning">
+                            <h5>For Best Results:</h5>
+                            <ul>
+                                <li>Ensure the student's face is clearly visible and well-lit</li>
+                                <li>Remove glasses, masks, or other face coverings</li>
+                                <li>Look directly at the camera</li>
+                                <li>Keep a neutral expression</li>
+                                <li>Avoid extreme angles or shadows</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('canvas');
+            const photo = document.getElementById('photo');
+            const startCameraBtn = document.getElementById('startCamera');
+            const capturePhotoBtn = document.getElementById('capturePhoto');
+            const retakePhotoBtn = document.getElementById('retakePhoto');
+            const switchCameraBtn = document.getElementById('switchCamera');
+            const faceImageInput = document.getElementById('face_image');
+            const capturedPhotoDiv = document.getElementById('capturedPhoto');
+            const registerBtn = document.getElementById('registerBtn');
+            const cameraStatus = document.getElementById('camera-status');
+            const studentIdInput = document.getElementById('student_id');
+            const emailInput = document.getElementById('email');
+
+            let currentStream = null;
+            let availableCameras = [];
+            let currentCameraIndex = 0;
+            let photoTaken = false;
+
+            // Check student ID availability
+            studentIdInput.addEventListener('blur', function() {
+                const studentId = studentIdInput.value.trim();
+                if (studentId) {
+                    fetch('/check_student_id_exists/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ student_id: studentId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            studentIdInput.classList.add('is-invalid');
+                            document.getElementById('student_id_feedback').textContent = 'This Student ID is already registered';
+                        } else {
+                            studentIdInput.classList.remove('is-invalid');
+                            studentIdInput.classList.add('is-valid');
+                        }
+                    });
+                }
+            });
+
+            // Check email availability
+            emailInput.addEventListener('blur', function() {
+                const email = emailInput.value.trim();
+                if (email) {
+                    fetch('/check_email_exists/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ email: email })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            emailInput.classList.add('is-invalid');
+                            document.getElementById('email_feedback').textContent = 'This email is already registered';
+                        } else {
+                            emailInput.classList.remove('is-invalid');
+                            emailInput.classList.add('is-valid');
+                        }
+                    });
+                }
+            });
+
+            // List all available cameras
+            async function listCameras() {
+                try {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    availableCameras = devices.filter(device => device.kind === 'videoinput');
+                    
+                    if (availableCameras.length === 0) {
+                        cameraStatus.innerHTML = '<div class="alert alert-danger">No cameras detected on your device.</div>';
+                        return false;
+                    }
+                    
+                    // If multiple cameras, prioritize external ones (often listed after built-in ones)
+                    if (availableCameras.length > 1) {
+                        currentCameraIndex = availableCameras.length - 1;
+                    }
+                    
+                    return true;
+                } catch (err) {
+                    console.error("Error listing cameras:", err);
+                    cameraStatus.innerHTML = '<div class="alert alert-danger">Failed to list available cameras.</div>';
+                    return false;
+                }
+            }
+            
+            // Start the webcam with the selected camera
+            async function startCamera(cameraIndex) {
+                if (currentStream) {
+                    // Stop existing stream
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                
+                cameraStatus.innerHTML = '<div class="alert alert-info">Connecting to camera...</div>';
+                
+                try {
+                    // If we have a specific camera, use it
+                    const constraints = {
+                        video: availableCameras.length > 0 
+                            ? { deviceId: { exact: availableCameras[cameraIndex].deviceId },
+                                width: { ideal: 640 },
+                                height: { ideal: 480 } }
+                            : { width: { ideal: 640 }, height: { ideal: 480 } }
+                    };
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    currentStream = stream;
+                    video.srcObject = stream;
+                    
+                    // Display current camera name if available
+                    const currentCamera = availableCameras[cameraIndex];
+                    const cameraName = currentCamera ? currentCamera.label || `Camera ${cameraIndex + 1}` : 'Default camera';
+                    
+                    cameraStatus.innerHTML = `<div class="alert alert-success">Using: ${cameraName}</div>`;
+                    capturePhotoBtn.disabled = false;
+                    return true;
+                } catch (err) {
+                    console.error("Camera access error:", err);
+                    cameraStatus.innerHTML = `<div class="alert alert-danger">Error accessing camera: ${err.message}</div>`;
+                    return false;
+                }
+            }
+            
+            // Start Camera button
+            startCameraBtn.addEventListener('click', async function() {
+                const camerasAvailable = await listCameras();
+                if (camerasAvailable) {
+                    await startCamera(currentCameraIndex);
+                }
+            });
+            
+            // Capture Photo button
+            capturePhotoBtn.addEventListener('click', function() {
+                const context = canvas.getContext('2d');
+                if (video.videoWidth && video.videoHeight) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+                    photo.src = imageData;
+                    faceImageInput.value = imageData;
+                    
+                    // Show captured photo and retake button
+                    capturedPhotoDiv.style.display = 'block';
+                    retakePhotoBtn.style.display = 'inline-block';
+                    video.style.display = 'none';
+                    
+                    photoTaken = true;
+                    updateRegisterButtonState();
+                }
+            });
+            
+            // Retake Photo button
+            retakePhotoBtn.addEventListener('click', function() {
+                capturedPhotoDiv.style.display = 'none';
+                retakePhotoBtn.style.display = 'none';
+                video.style.display = 'block';
+                faceImageInput.value = '';
+                photoTaken = false;
+                updateRegisterButtonState();
+            });
+            
+            // Switch Camera button
+            switchCameraBtn.addEventListener('click', async function() {
+                if (availableCameras.length <= 1) {
+                    cameraStatus.innerHTML = '<div class="alert alert-warning">Only one camera available</div>';
+                    return;
+                }
+                
+                // Cycle to next camera
+                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                await startCamera(currentCameraIndex);
+            });
+            
+            // Function to check if the form is valid
+            function updateRegisterButtonState() {
+                const form = document.getElementById('registrationForm');
+                const requiredFields = form.querySelectorAll('input[required], select[required]');
+                let allFilled = true;
+                
+                requiredFields.forEach(field => {
+                    if (!field.value) {
+                        allFilled = false;
+                    }
+                });
+                
+                registerBtn.disabled = !(allFilled && photoTaken);
+            }
+            
+            // Add event listeners to all required fields
+            const requiredFields = document.querySelectorAll('input[required], select[required]');
+            requiredFields.forEach(field => {
+                field.addEventListener('input', updateRegisterButtonState);
+            });
+            
+            // Helper function to get cookies (for CSRF token)
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+        });
+    </script>
+</body>
+</html>

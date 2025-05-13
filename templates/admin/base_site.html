@@ -1,0 +1,139 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Smart Attendance System{% endblock %}
+
+
+{% block branding %}
+<div style="text-align: center; width: 100%;">
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">
+            <span style="color: #f8eaea; font-weight: bold;">Smart Attendance System Face Recognition</span>
+        </a>
+    </h1>
+    
+</div>
+{% endblock %}
+
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #0d76df;
+        --secondary: #117ddb;
+        --success: #28a745;
+        --info: #17a2b8;
+        --warning: #ffc107;
+        --danger: #dc3545;
+        --light: #f8f9fa;
+        --dark: #82acd6;
+    }
+
+    #header {
+        background: var(--primary);
+        color: rgb(213, 207, 207);
+    }
+
+    .module h2, .module caption, .inline-group h2 {
+        background: var(--primary);
+    }
+
+    div.breadcrumbs {
+        background: var(--secondary);
+    }
+
+    a:link, a:visited {
+        color: var(--primary);
+    }
+
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .button.default, input[type=submit].default, .submit-row input.default {
+        background: var(--success);
+    }
+
+    .button:hover, input[type=submit]:hover, input[type=button]:hover {
+        background: var(--info);
+    }
+
+    .button.default:hover, input[type=submit].default:hover {
+        background: var(--success);
+        opacity: 0.8;
+    }
+
+    .object-tools a:link, .object-tools a:visited {
+        background: var(--info);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 3px;
+    }
+
+    .object-tools a:hover {
+        background-color: var(--primary);
+    }
+
+    #changelist-filter h2 {
+        background: var(--dark);
+    }
+
+    .dashboard-module-content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .dashboard-card {
+        flex: 1 0 calc(33.333% - 15px);
+        min-width: 300px;
+        background: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(180, 54, 54, 0.1);
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+
+    .dashboard-card-header {
+        background: var(--primary);
+        color: rgb(235, 235, 245);
+        padding: 15px;
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .dashboard-card-body {
+        padding: 15px;
+        color:rgb(81, 159, 196):
+    }
+
+    .dashboard-quick-link {
+        display: block;
+        padding: 10px;
+        margin: 5px 0;
+        background: var(--light);
+        border-radius: 4px;
+        text-decoration: none;
+        color: var(--primary);
+    }
+
+    .dashboard-quick-link:hover {
+        background: var(--primary);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block nav-global %}
+<div style="padding: 5px 10px; margin-left: 15px;">
+    <a href="/" class="button" style="margin-right: 10px;">Home</a>
+    <a href="/register/" class="button" style="margin-right: 10px;">Register Student</a>
+    <a href="/reports/" class="button">View Reports</a>
+</div>
+{% endblock %}

@@ -1,0 +1,646 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Attendance - Smart Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .recognition-highlight {
+            animation: highlight-fade 2s;
+        }
+        @keyframes highlight-fade {
+            from { background-color: #d4edda; }
+            to { background-color: transparent; }
+        }
+        #webcam {
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .camera-controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .feature-icon {
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-active {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        .status-inactive {
+            background-color: #dc3545;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .course-select-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .attendance-stats {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Smart Attendance System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/register/' in request.path %}active{% endif %}" href="/register/">
+                            <i class="fas fa-user-plus"></i> Register Student
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/attendance/' in request.path %}active{% endif %}" href="/attendance/">
+                            <i class="fas fa-clipboard-check"></i> Take Attendance
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/reports/' in request.path %}active{% endif %}" href="/reports/">
+                            <i class="fas fa-chart-bar"></i> Attendance Reports
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            {% if user.is_staff %}
+                            <li><a class="dropdown-item" href="/admin/">
+                                <i class="fas fa-cog"></i> Admin Panel
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="/logout/">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login/">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-check-circle me-2"></i>
+                {% elif message.tags == 'error' or message.tags == 'danger' %}
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                {% elif message.tags == 'info' %}
+                    <i class="fas fa-info-circle me-2"></i>
+                {% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+                
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <div class="course-select-container">
+                    <h4><i class="fas fa-book feature-icon"></i> Select Course</h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <select class="form-select" id="yearFilter">
+                                <option value="">All Years</option>
+                                {% for year_val, year_name in years %}
+                                    <option value="{{ year_name }}">{{ year_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="course">
+                                <option value="">Select Course</option>
+                                {% for year, courses in courses_by_year.items %}
+                                    <optgroup label="{{ year }}">
+                                        {% for course in courses %}
+                                            <option value="{{ course.id }}" data-year="{{ year }}">
+                                                {{ course.course_code }} - {{ course.course_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4><i class="fas fa-camera"></i> Take Attendance</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 text-center">
+                            <div id="camera-container">
+                                <video id="webcam" width="100%" height="auto" autoplay playsinline></video>
+                                <canvas id="canvas" style="display: none;"></canvas>
+                            </div>
+                            <div class="camera-controls">
+                                <button id="startCaptureBtn" class="btn btn-primary">
+                                    <i class="fas fa-play"></i> Start Capture
+                                </button>
+                                <button id="stopCaptureBtn" class="btn btn-danger" disabled>
+                                    <i class="fas fa-stop"></i> Stop Capture
+                                </button>
+                                <button id="switchCameraBtn" class="btn btn-secondary">
+                                    <i class="fas fa-sync-alt"></i> Switch Camera
+                                </button>
+                            </div>
+                        </div>
+                        <div id="camera-status" class="mt-2"></div>
+                        <div id="capture-status" class="mt-2"></div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h4><i class="fas fa-info-circle"></i> Instructions</h4>
+                    </div>
+                    <div class="card-body">
+                        <ol class="mb-0">
+                            <li>Select the course from the dropdown menu</li>
+                            <li>Make sure students are facing the camera</li>
+                            <li>Click "Start Capture" to begin face recognition</li>
+                            <li>The system will continuously scan for students</li>
+                            <li>Recognition results will appear on the right</li>
+                            <li>Click "Stop Capture" when done</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4>
+                            <i class="fas fa-clipboard-list"></i> Recognition Results
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultsContainer" class="mb-3">
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-users fa-3x mb-3"></i>
+                                <h5>Attendance results will appear here</h5>
+                                <p class="text-secondary">Start capturing to recognize students</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="attendance-stats">
+                    <h5><i class="fas fa-chart-pie me-2"></i>Session Statistics</h5>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="card-body">
+                                <h3 id="totalRecognized">0</h3>
+                                <p class="text-muted">Students Recognized</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card-body">
+                                <h3 id="captureCount">0</h3>
+                                <p class="text-muted">Captures Processed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="captureStatus" class="mt-3 text-center">
+                        <span class="status-indicator status-inactive" id="statusIndicator"></span>
+                        <span id="statusText">Capture inactive</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('canvas');
+            const startCaptureBtn = document.getElementById('startCaptureBtn');
+            const stopCaptureBtn = document.getElementById('stopCaptureBtn');
+            const switchCameraBtn = document.getElementById('switchCameraBtn');
+            const courseSelect = document.getElementById('course');
+            const yearFilter = document.getElementById('yearFilter');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const cameraStatus = document.getElementById('camera-status');
+            const captureStatus = document.getElementById('capture-status');
+            const totalRecognized = document.getElementById('totalRecognized');
+            const captureCountDisplay = document.getElementById('captureCount');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            let currentStream = null;
+            let availableCameras = [];
+            let currentCameraIndex = 0;
+            let captureInterval = null;
+            let isContinuousCapturing = false;
+            let captureCount = 0;
+            let recognizedStudentIds = new Set();
+            
+            // Handle year filter change
+            yearFilter.addEventListener('change', function() {
+                const selectedYear = this.value;
+                const options = courseSelect.querySelectorAll('option');
+                
+                options.forEach(option => {
+                    if (!selectedYear || option.dataset.year === selectedYear) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                
+                // Reset course selection if current selected course is now hidden
+                if (courseSelect.selectedOptions[0] && 
+                    courseSelect.selectedOptions[0].style.display === 'none') {
+                    courseSelect.value = '';
+                }
+            });
+            
+            // List all available cameras
+            async function listCameras() {
+                try {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    availableCameras = devices.filter(device => device.kind === 'videoinput');
+                    console.log('Available cameras:', availableCameras);
+                    
+                    if (availableCameras.length === 0) {
+                        cameraStatus.innerHTML = '<div class="alert alert-danger">' +
+                            '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                            'No cameras detected on your device.</div>';
+                        return false;
+                    }
+                    
+                    // Try to find external cameras (often listed after the built-in ones)
+                    // If multiple cameras, choose a non-first one by default
+                    if (availableCameras.length > 1) {
+                        // Prioritize external webcams - they usually come later in the list
+                        currentCameraIndex = availableCameras.length - 1;
+                    }
+                    
+                    return true;
+                } catch (err) {
+                    console.error("Error listing cameras:", err);
+                    cameraStatus.innerHTML = '<div class="alert alert-danger">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                        'Failed to list available cameras: ' + err.message + '</div>';
+                    return false;
+                }
+            }
+            
+            // Start the webcam with the selected camera
+            async function startCamera(cameraIndex) {
+                if (currentStream) {
+                    // Stop existing stream
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                
+                cameraStatus.innerHTML = '<div class="alert alert-info">' +
+                    '<div class="spinner-border spinner-border-sm me-2" role="status"></div>' +
+                    'Connecting to camera...</div>';
+                
+                try {
+                    // If we have a specific camera, use it
+                    const constraints = {
+                        video: availableCameras.length > 0 
+                            ? { deviceId: { exact: availableCameras[cameraIndex].deviceId },
+                                width: { ideal: 640 },
+                                height: { ideal: 480 } }
+                            : { width: { ideal: 640 }, height: { ideal: 480 } }
+                    };
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    currentStream = stream;
+                    video.srcObject = stream;
+                    
+                    // Display current camera name if available
+                    const currentCamera = availableCameras[cameraIndex];
+                    const cameraName = currentCamera ? currentCamera.label || `Camera ${cameraIndex + 1}` : 'Default camera';
+                    
+                    cameraStatus.innerHTML = `<div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Using: ${cameraName}</div>`;
+                    return true;
+                } catch (err) {
+                    console.error("Camera access error:", err);
+                    cameraStatus.innerHTML = `<div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error accessing camera: ${err.message}</div>`;
+                    return false;
+                }
+            }
+            
+            // Initialize cameras and start with preferred one
+            async function initializeCamera() {
+                const camerasAvailable = await listCameras();
+                if (camerasAvailable) {
+                    await startCamera(currentCameraIndex);
+                }
+            }
+            
+            // Initialize on page load
+            initializeCamera();
+            
+            // Switch camera button
+            switchCameraBtn.addEventListener('click', async function() {
+                if (availableCameras.length <= 1) {
+                    cameraStatus.innerHTML = '<div class="alert alert-warning">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                        'Only one camera available</div>';
+                    return;
+                }
+                
+                // Cycle to next camera
+                currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+                await startCamera(currentCameraIndex);
+            });
+            
+            // Function to capture attendance
+            function captureAttendance() {
+                if (!currentStream) {
+                    cameraStatus.innerHTML = '<div class="alert alert-danger">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                        'No active camera. Please refresh the page.</div>';
+                    return;
+                }
+                
+                const courseId = courseSelect.value;
+                if (!courseId) {
+                    captureStatus.innerHTML = '<div class="alert alert-warning">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                        'Please select a course before capturing.</div>';
+                    stopContinuousCapture();
+                    return;
+                }
+                
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = canvas.toDataURL('image/jpeg', 0.9);
+                
+                captureCount++;
+                captureStatus.innerHTML = `
+                    <div class="alert alert-info">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Continuous capture in progress: ${captureCount} capture(s) processed
+                    </div>
+                `;
+                
+                captureCountDisplay.textContent = captureCount;
+            
+                fetch('/attendance/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        face_image: imageData,
+                        course_id: courseId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response received:", data);
+                    if (data.success) {
+                        // Count newly recognized students
+                        let newlyRecognized = 0;
+                        
+                        data.recognized_students.forEach(student => {
+                            if (!recognizedStudentIds.has(student.student_id)) {
+                                recognizedStudentIds.add(student.student_id);
+                                newlyRecognized++;
+                            }
+                        });
+                        
+                        totalRecognized.textContent = recognizedStudentIds.size;
+                        
+                        let resultsHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Attendance Marked Successfully!</strong>
+                                <p>Last update: ${new Date().toLocaleTimeString()}</p>
+                            </div>
+                        `;
+                        
+                        // If we have newly recognized students, show a highlight
+                        if (newlyRecognized > 0) {
+                            resultsHTML += `
+                                <div class="alert alert-info recognition-highlight">
+                                    <i class="fas fa-user-check me-2"></i>
+                                    <strong>${newlyRecognized} new student(s) recognized in this capture!</strong>
+                                </div>
+                            `;
+                        }
+                        
+                        resultsHTML += `
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        data.recognized_students.forEach(student => {
+                            resultsHTML += `
+                                <tr ${student.marked_now ? 'class="recognition-highlight"' : ''}>
+                                    <td>${student.student_id}</td>
+                                    <td>${student.name}</td>
+                                    <td>${student.marked_now ? 
+                                        '<span class="badge bg-success">Newly Marked</span>' : 
+                                        '<span class="badge bg-info">Already Marked</span>'}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        resultsHTML += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                        
+                        resultsContainer.innerHTML = resultsHTML;
+                    } else {
+                        resultsContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                ${data.message || 'Failed to mark attendance. Continuous capture is still running.'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultsContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            An error occurred. Continuous capture is still running.
+                        </div>
+                    `;
+                });
+            }
+            
+            // Start continuous capture
+            startCaptureBtn.addEventListener('click', function() {
+                if (isContinuousCapturing) return;
+                
+                const courseId = courseSelect.value;
+                if (!courseId) {
+                    captureStatus.innerHTML = '<div class="alert alert-warning">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                        'Please select a course before starting capture.</div>';
+                    return;
+                }
+                
+                isContinuousCapturing = true;
+                captureCount = 0;
+                recognizedStudentIds = new Set();
+                
+                // Update UI counters
+                captureCountDisplay.textContent = '0';
+                totalRecognized.textContent = '0';
+                
+                // Disable/enable relevant buttons
+                startCaptureBtn.disabled = true;
+                stopCaptureBtn.disabled = false;
+                courseSelect.disabled = true;
+                yearFilter.disabled = true;
+                
+                captureStatus.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Continuous attendance capture started!
+                    </div>
+                `;
+                
+                // Update status indicator
+                statusIndicator.classList.remove('status-inactive');
+                statusIndicator.classList.add('status-active');
+                statusText.textContent = 'Capture active';
+                
+                // Immediately take first capture
+                captureAttendance();
+                
+                // Set interval for continuous capture (every 5 seconds)
+                captureInterval = setInterval(captureAttendance, 5000);
+            });
+            
+            // Stop continuous capture
+            stopCaptureBtn.addEventListener('click', function() {
+                stopContinuousCapture();
+            });
+            
+            // Function to stop continuous capture
+            function stopContinuousCapture() {
+                if (!isContinuousCapturing) return;
+                
+                clearInterval(captureInterval);
+                isContinuousCapturing = false;
+                
+                // Re-enable/disable relevant buttons
+                startCaptureBtn.disabled = false;
+                stopCaptureBtn.disabled = true;
+                courseSelect.disabled = false;
+                yearFilter.disabled = false;
+                
+                captureStatus.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-pause-circle me-2"></i>
+                        Continuous capture stopped after ${captureCount} capture(s).
+                    </div>
+                `;
+                
+                // Update status indicator
+                statusIndicator.classList.remove('status-active');
+                statusIndicator.classList.add('status-inactive');
+                statusText.textContent = 'Capture inactive';
+            }
+            
+            // Helper function to get cookies (for CSRF token)
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            }
+        });
+     </script>
+</body>
+</html>

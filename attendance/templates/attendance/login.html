@@ -1,0 +1,283 @@
+{% load static %}
+<!-- templates/attendance/login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg,rgb(214, 194, 234) 0%, #2575fc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .login-container {
+            max-width: 500px;
+            width: 100%;
+            padding: 0 15px;
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .login-logo h1 {
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 2rem;
+        }
+        
+        .login-logo p {
+            color: #e6e6e6;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+            overflow: hidden;
+        }
+
+        .card-header {
+            border-bottom: none;
+            padding: 20px;
+        }
+
+        .nav-tabs {
+            border-bottom: none;
+            justify-content: center;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            padding: 10px 25px;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-tabs .nav-link:hover:not(.active) {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .card-body {
+            padding: 30px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 12px 15px;
+            border: 1px solid #e1e1e1;
+            background-color: #fcfcfc;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #2575fc;
+            box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #2575fc, #6a11cb);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(to right, #1a67e8, #5b0fb3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .password-input {
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .forgotten-password {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .forgotten-password a {
+            color: #2575fc;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .forgotten-password a:hover {
+            text-decoration: underline;
+        }
+
+        .tab-content {
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-logo">
+            <h1>Smart Attendance System</h1>
+            <p class="text-white">Using Face Recognition Technology</p>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary">
+                <ul class="nav nav-tabs" id="loginTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="user-tab" data-bs-toggle="tab" data-bs-target="#user-login" 
+                                type="button" role="tab" aria-controls="user-login" aria-selected="true">
+                            <i class="fas fa-user me-2"></i>User Login
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-login" 
+                                type="button" role="tab" aria-controls="admin-login" aria-selected="false">
+                            <i class="fas fa-user-shield me-2"></i>Admin Login
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <div class="tab-content" id="loginTabsContent">
+                    <!-- User Login Form -->
+                    <div class="tab-pane fade show active" id="user-login" role="tabpanel" aria-labelledby="user-tab">
+                        <form method="post" action="{% url 'login' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="login_type" value="user">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control password-input" id="password" name="password" placeholder="Enter your password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Admin Login Form -->
+                    <div class="tab-pane fade" id="admin-login" role="tabpanel" aria-labelledby="admin-tab">
+                        <form method="post" action="{% url 'login' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="login_type" value="admin">
+                            <div class="mb-3">
+                                <label for="admin_username" class="form-label">Admin Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-shield"></i></span>
+                                    <input type="text" class="form-control" id="admin_username" name="username" placeholder="Enter admin username" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="admin_password" class="form-label">Admin Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control password-input" id="admin_password" name="password" placeholder="Enter admin password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleAdminPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Admin Login
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle password visibility
+            document.getElementById('togglePassword').addEventListener('click', function() {
+                const passwordInput = document.getElementById('password');
+                const icon = this.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+            
+            // Toggle admin password visibility
+            document.getElementById('toggleAdminPassword').addEventListener('click', function() {
+                const passwordInput = document.getElementById('admin_password');
+                const icon = this.querySelector('i');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
