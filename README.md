@@ -14,6 +14,7 @@ A web-based attendance system built with Django and OpenCV that uses face recogn
 
 ## 📁 Project Structure
 smart_attendance/
+
 ├── attendance/ # Django app for attendance logic
 ├── smart_attendance/ # Django project settings
 ├── static/ # Static files (CSS, JS, images)
@@ -58,30 +59,30 @@ smart_attendance/
 
 
 
-📸 Face Recognition Usage
+##📸 Face Recognition Usage
 
 Upload student images via the admin dashboard or capture directly from webcam.
 
 The face embeddings are stored and used for real-time recognition during attendance.
 
-🛠️ Utilities
+##🛠️ Utilities
 
 utils/face_recognition.py handles face encoding and recognition.
 
 Webcam or camera access is done through JavaScript  in html files and OpenCV integration.
 
-📌 Notes
+##📌 Notes
 Ensure your webcam or camera   is working.
 
 Use clear and front-facing images for best results.
 
 Haar Cascade is used as fallback detection.
 
-🧑‍💻 Contributing
+##🧑‍💻 Contributing
 
 Pull requests are welcome. For major changes, please open an issue first.
 
-📃 License
+##📃 License
 
 MIT License
 
