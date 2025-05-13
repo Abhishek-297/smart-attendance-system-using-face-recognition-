@@ -14,14 +14,20 @@ A web-based attendance system built with Django and OpenCV that uses face recogn
 
 ## 📁 Project Structure
 smart_attendance/
-
 ├── attendance/ # Django app for attendance logic
+
 ├── smart_attendance/ # Django project settings
+
 ├── static/ # Static files (CSS, JS, images)
+
 ├── media/ # For storing student faces
+
 ├── templates/ # HTML templates
+
 ├── utils/ # Face recognition logic
+
 ├── db.sqlite3 # Default SQLite DB ( I used MySQL)
+
 └── manage.py # Django management script
 
 
@@ -31,7 +37,7 @@ smart_attendance/
 - Django
 - OpenCV
 - face_recognition
-- MySQL (or SQLite)
+- MySQL 
 - HTML, CSS, Bootstrap
 - JavaScript
 
