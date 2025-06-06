@@ -1,5 +1,4 @@
-# Smart Attendance System Using Face Recognition
-
+# Face Recognition Based Automated Attendance Marking System 
 A web-based attendance system built with Django and OpenCV that uses face recognition to mark attendance automatically. It streamlines traditional attendance processes by integrating real-time face detection and recognition.
 
 ## 🔧 Features
