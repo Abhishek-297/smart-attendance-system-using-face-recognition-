@@ -84,7 +84,7 @@ Haar Cascade is used as fallback detection.
 
 ## 🧑‍💻 Contributing
 
-Pull requests are welcome. For major changes, please open an issue first.
+Pull requests are welcome. For major changes.
 
 ## 📃 License
 
