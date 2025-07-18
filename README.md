@@ -43,7 +43,7 @@ smart_attendance/
 ## 🚀 Setup Instructions
 
 1. Clone the repository
-              git clone https://github.com/yourusername/smart_attendance.git
+              https://github.com/Abhishek-297/smart-attendance-system-using-face-recognition-
    
 2. Create a virtual environment and install dependencies
    python -m venv venv
